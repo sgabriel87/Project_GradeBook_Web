@@ -42,11 +42,11 @@ namespace Project_GradeBook_Web.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message); // Return 400 Bad Request with validation error message
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.Message); // Return 409 Conflict with duplicate entry error message
+                return Conflict(ex.Message);
             }
         }
 
