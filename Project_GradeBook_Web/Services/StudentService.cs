@@ -2,6 +2,7 @@
 using Project_GradeBook_Web.Models;
 using Project_GradeBook_Web.DbContext;
 using Microsoft.EntityFrameworkCore;
+using Project_GradeBook_Web.Filters;
 
 namespace Project_GradeBook_Web.Services
 {
@@ -36,6 +37,12 @@ namespace Project_GradeBook_Web.Services
 
         public async Task<StudentDto?> GetStudentByIdAsync(int id)
         {
+            var student = await ctx.Students.FindAsync(id);
+            if (student == null)
+            {
+                throw new IdNotFoundException($"Student with ID {id} not found.");
+            }
+
             return await ctx.Students
                 .Where(s => s.Id == id)
                 .Select(s => new StudentDto
@@ -44,13 +51,13 @@ namespace Project_GradeBook_Web.Services
                     FirstName = s.FirstName,
                     LastName = s.LastName,
                     Age = s.Age,
-                 Address = s.Address != null ? new AddressDto
-                 {
-                     Id = s.Address.Id,
-                     City = s.Address.City,
-                     Street = s.Address.Street,
-                     Number = s.Address.Number
-                 } : null
+                    Address = s.Address != null ? new AddressDto
+                    {
+                        Id = s.Address.Id,
+                        City = s.Address.City,
+                        Street = s.Address.Street,
+                        Number = s.Address.Number
+                    } : null
                 })
                 .FirstOrDefaultAsync();
         }
@@ -64,6 +71,7 @@ namespace Project_GradeBook_Web.Services
             {
                 throw new ArgumentException("Invalid input. Please fill out all fields correctly.");
             }
+
             bool exists = await ctx.Students.AnyAsync(s => s.FirstName == createStudentDto.FirstName && s.LastName == createStudentDto.LastName);
             if (exists)
             {
@@ -92,27 +100,24 @@ namespace Project_GradeBook_Web.Services
 
         public async Task UpdateStudentAsync(int id, CreateStudentDto updateStudentDto)
         {
+
             var student = await ctx.Students.Include(s => s.Address).FirstOrDefaultAsync(s => s.Id == id);
-            if (student == null) throw new KeyNotFoundException("Student not found");
+           
+            if (student == null)
+            {
+                throw new IdNotFoundException($"Student with ID {id} not found.");
+            }
+            if (string.IsNullOrWhiteSpace(updateStudentDto.FirstName) || updateStudentDto.FirstName == "string" ||
+               string.IsNullOrWhiteSpace(updateStudentDto.LastName) || updateStudentDto.LastName == "string" ||
+               updateStudentDto.Age == 0)
+            {
+                throw new ArgumentException("Invalid input. Please fill out all fields correctly.");
+            }
 
             student.FirstName = updateStudentDto.FirstName;
             student.LastName = updateStudentDto.LastName;
             student.Age = updateStudentDto.Age;
 
-            await ctx.SaveChangesAsync();
-        }
-
-        public async Task DeleteStudentAsync(int id, bool deleteAddress)
-        {
-            var student = await ctx.Students.Include(s => s.Address).FirstOrDefaultAsync(s => s.Id == id);
-            if (student == null) throw new KeyNotFoundException("Student not found");
-            
-            if (deleteAddress && student.Address != null)
-            {
-                ctx.Addresses.Remove(student.Address);
-            }
-
-            ctx.Students.Remove(student);
             await ctx.SaveChangesAsync();
         }
 
@@ -145,6 +150,25 @@ namespace Project_GradeBook_Web.Services
                 LastName = s.LastName,
                 AverageGrade = s.AverageGrade ?? 0 
             });
+        }
+        public async Task<(int Id, string FirstName, string LastName)> DeleteStudentAsync(int id, bool deleteAddress)
+        {
+            var student = await ctx.Students.Include(s => s.Address).FirstOrDefaultAsync(s => s.Id == id);
+            if (student == null)
+            {
+                throw new IdNotFoundException($"Student with ID {id} not found.");
+            }
+
+            if (deleteAddress && student.Address != null)
+            {
+                ctx.Addresses.Remove(student.Address);
+            }
+
+            ctx.Students.Remove(student);
+            await ctx.SaveChangesAsync();
+
+            
+            return (student.Id, student.FirstName, student.LastName);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Project_GradeBook_Web.DbContext;
 using Project_GradeBook_Web.DTOs;
+using Project_GradeBook_Web.Filters;
 using Project_GradeBook_Web.Models;
 
 namespace Project_GradeBook_Web.Services
@@ -20,18 +21,12 @@ namespace Project_GradeBook_Web.Services
 
             if (student == null)
             {
-                return null;
+                throw new IdNotFoundException($"Student with ID {studentId} not found.");
             }
 
             if (student.Address == null)
             {
-                return new AddressDto
-                {
-                    Id = 0,
-                    City = "Student has no address.",
-                    Street = string.Empty,
-                    Number = string.Empty
-                };
+                throw new StudentNoAddressException("Student has no address.");
             }
 
             return new AddressDto
@@ -43,10 +38,13 @@ namespace Project_GradeBook_Web.Services
             };
         }
 
-        public async Task UpdateStudentAddressAsync(int id, CreateAddressDto addressDto)
+        public async Task<AddressDto> UpdateStudentAddressAsync(int id, CreateAddressDto addressDto)
         {
             var student = await ctx.Students.Include(s => s.Address).FirstOrDefaultAsync(s => s.Id == id);
-            if (student == null) throw new KeyNotFoundException("Student not found");
+            if (student == null)
+            {
+                throw new IdNotFoundException($"Student with ID {id} not found.");
+            }
 
             if (student.Address == null)
             {
@@ -65,6 +63,14 @@ namespace Project_GradeBook_Web.Services
             }
 
             await ctx.SaveChangesAsync();
+
+            return new AddressDto
+            {
+                Id = student.Address.Id,
+                City = student.Address.City,
+                Street = student.Address.Street,
+                Number = student.Address.Number
+            };
         }
     }
 }

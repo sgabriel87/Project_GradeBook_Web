@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Project_GradeBook_Web.DbContext;
 using Project_GradeBook_Web.DTOs;
+using Project_GradeBook_Web.Filters;
 using Project_GradeBook_Web.Models;
 
 namespace Project_GradeBook_Web.Services
@@ -14,25 +15,21 @@ namespace Project_GradeBook_Web.Services
             this.ctx = ctx;
         }
 
-        public async Task AddMarkAsync(int studentId, CreateMarkDto markDto)
+        public async Task<string> AddMarkAsync(int studentId, CreateMarkDto markDto)
         {
-            var mostRecentMark = await ctx.Marks
-                .Where(m => m.StudentId == studentId)
-                .OrderByDescending(m => m.DateAwarded)
-                .FirstOrDefaultAsync();
-
-            if (mostRecentMark != null)
+            var student = await ctx.Students.FirstOrDefaultAsync(s => s.Id == studentId);
+            if (student == null)
             {
-                var newMarkDate = DateTime.UtcNow;
-                var timeDifference = newMarkDate - mostRecentMark.DateAwarded;
-
-                if (timeDifference.TotalSeconds < 10)
-                {
-                    throw new InvalidOperationException($"Mark cannot be awarded. It must be at least 10 seconds after the previous mark with id {mostRecentMark.Id}.");
-                }
+                return $"Student with ID {studentId} not found.";
             }
 
-            var mark = new Mark
+            var subject = await ctx.Subjects.FirstOrDefaultAsync(s => s.Id == markDto.SubjectId);
+            if (subject == null)
+            {
+                return $"Subject with ID {markDto.SubjectId} not found.";
+            }
+
+            var newMark = new Mark
             {
                 StudentId = studentId,
                 SubjectId = markDto.SubjectId,
@@ -40,13 +37,21 @@ namespace Project_GradeBook_Web.Services
                 DateAwarded = DateTime.UtcNow
             };
 
-            ctx.Marks.Add(mark);
+            ctx.Marks.Add(newMark);
             await ctx.SaveChangesAsync();
+
+            return $"Mark added successfully. Student ID: {studentId}, Mark: {markDto.Value}, Subject: {subject.Name}";
         }
 
         public async Task<IEnumerable<MarkDto>> GetStudentMarksAsync(int studentId)
         {
-            return await ctx.Marks
+            var studentExists = await ctx.Students.AnyAsync(s => s.Id == studentId);
+            if (!studentExists)
+            {
+                throw new IdNotFoundException($"Student with ID {studentId} not found.");
+            }
+
+            var marks = await ctx.Marks
                 .Where(m => m.StudentId == studentId)
                 .Select(m => new MarkDto
                 {
@@ -60,16 +65,29 @@ namespace Project_GradeBook_Web.Services
                     }
                 })
                 .ToListAsync();
+
+            if (!marks.Any())
+            {
+                return new List<MarkDto>();
+            }
+
+            return marks;
         }
 
         public async Task<IEnumerable<MarkDto>> GetStudentMarksBySubjectAsync(int studentId, int subjectId)
         {
-            return await ctx.Marks
+            var studentExists = await ctx.Students.AnyAsync(s => s.Id == studentId);
+            if (!studentExists)
+            {
+                throw new IdNotFoundException($"Student with ID {studentId} not found.");
+            }
+
+            var marks = await ctx.Marks
                 .Where(m => m.StudentId == studentId && m.SubjectId == subjectId)
                 .Select(m => new MarkDto
                 {
                     Id = m.Id,
-                    Value = m.Value,
+                    Value = (int)m.Value,
                     DateAwarded = m.DateAwarded,
                     Subject = new SubjectDto
                     {
@@ -78,13 +96,37 @@ namespace Project_GradeBook_Web.Services
                     }
                 })
                 .ToListAsync();
+
+            if (!marks.Any())
+            {
+                return new List<MarkDto>();
+            }
+
+            return marks;
         }
 
-        public async Task<double> GetStudentAverageMarkBySubjectAsync(int studentId, int subjectId)
+        public async Task<double?> GetStudentAverageMarkBySubjectAsync(int studentId, int subjectId)
         {
+            var studentExists = await ctx.Students.AnyAsync(s => s.Id == studentId);
+            if (!studentExists)
+            {
+                throw new IdNotFoundException($"Student with ID {studentId} not found.");
+            }
+
+            var subjectExists = await ctx.Subjects.AnyAsync(s => s.Id == subjectId);
+            if (!subjectExists)
+            {
+                throw new IdNotFoundException($"Subject with ID {subjectId} not found.");
+            }
+
             var average = await ctx.Marks
                 .Where(m => m.StudentId == studentId && m.SubjectId == subjectId)
                 .AverageAsync(m => m.Value);
+
+            if (double.IsNaN(average))
+            {
+                throw new NoMarksFoundException($"No marks found for student with ID {studentId} in subject with ID {subjectId}.");
+            }
 
             return average;
         }
@@ -110,7 +152,7 @@ namespace Project_GradeBook_Web.Services
                 Id = s.Id,
                 FirstName = s.FirstName,
                 LastName = s.LastName,
-                AverageGrade = s.AverageMark ?? 0 
+                AverageGrade = s.AverageMark ?? 0
             });
         }
     }

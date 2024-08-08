@@ -14,7 +14,11 @@ namespace Project_GradeBook_Web.Controllers
         {
             this.subjectService = subjectService;
         }
-
+        /// <summary>
+        /// Adds a new subject to the database.
+        /// </summary>
+        /// <param name="subjectDto"></param>
+        /// <returns></returns>
         [HttpPost("subjects")]
         public async Task<IActionResult> AddSubject(CreateSubjectDto subjectDto)
         {

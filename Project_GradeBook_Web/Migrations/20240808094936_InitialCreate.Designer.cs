@@ -12,7 +12,7 @@ using Project_GradeBook_Web.DbContext;
 namespace Project_GradeBook_Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240803135055_InitialCreate")]
+    [Migration("20240808094936_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -44,9 +44,6 @@ namespace Project_GradeBook_Web.Migrations
                     b.Property<string>("Street")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -139,7 +136,7 @@ namespace Project_GradeBook_Web.Migrations
                         .IsRequired();
 
                     b.HasOne("Project_GradeBook_Web.Models.Subject", "Subject")
-                        .WithMany()
+                        .WithMany("Marks")
                         .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -153,8 +150,7 @@ namespace Project_GradeBook_Web.Migrations
                 {
                     b.HasOne("Project_GradeBook_Web.Models.Address", "Address")
                         .WithOne("Student")
-                        .HasForeignKey("Project_GradeBook_Web.Models.Student", "AddressId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("Project_GradeBook_Web.Models.Student", "AddressId");
 
                     b.Navigation("Address");
                 });
@@ -166,6 +162,11 @@ namespace Project_GradeBook_Web.Migrations
                 });
 
             modelBuilder.Entity("Project_GradeBook_Web.Models.Student", b =>
+                {
+                    b.Navigation("Marks");
+                });
+
+            modelBuilder.Entity("Project_GradeBook_Web.Models.Subject", b =>
                 {
                     b.Navigation("Marks");
                 });

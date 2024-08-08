@@ -15,5 +15,4 @@ namespace Project_GradeBook_Web.DbContext
         public DbSet<Subject> Subjects { get; set; }
 
     }
-
 }

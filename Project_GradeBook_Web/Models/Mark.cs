@@ -1,4 +1,6 @@
-﻿namespace Project_GradeBook_Web.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Project_GradeBook_Web.Models
 {
     public class Mark
     {
@@ -6,8 +8,10 @@
         public int Value { get; set; }
         public DateTime DateAwarded { get; set; }
         public int SubjectId { get; set; }
+        [ForeignKey(nameof(SubjectId))]
         public Subject Subject { get; set; }
         public int StudentId { get; set; }
+        [ForeignKey(nameof(StudentId))]
         public Student Student { get; set; }
     }
 }

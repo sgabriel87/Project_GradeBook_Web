@@ -5,6 +5,6 @@ namespace Project_GradeBook_Web.Services
     public interface IAddressService
     {
         Task<AddressDto> GetStudentAddressAsync(int studentId);
-        Task UpdateStudentAddressAsync(int id, CreateAddressDto addressDto);
+        Task<AddressDto> UpdateStudentAddressAsync(int studentId, CreateAddressDto addressDto);
     }
 }
