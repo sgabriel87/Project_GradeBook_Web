@@ -4,6 +4,6 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public ICollection<Mark> Marks { get; set; } = new List<Mark>();
+        public List<Mark> Marks { get; set; } = new List<Mark>();
     }
 }

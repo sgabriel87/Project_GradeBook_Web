@@ -2,9 +2,8 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Project_GradeBook_Web.DbContext;
-using Project_GradeBook_Web.Filters;
 using Project_GradeBook_Web.Services;
-using Swashbuckle.AspNetCore.SwaggerGen;
+
 
 var builder = WebApplication.CreateBuilder(args);
 

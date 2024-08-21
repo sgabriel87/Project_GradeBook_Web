@@ -111,15 +111,14 @@ namespace Project_GradeBook_Web.Controllers
         /// <param name="deleteAddress">Flag indicating whether to delete the student's address as well.</param>
         /// <returns>No content if the deletion is successful.</returns>
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteStudent(int id, [FromQuery] bool deleteAddress)
         {
             try
             {
-                var (studentId, firstName, lastName) = await studentService.DeleteStudentAsync(id, deleteAddress);
-                var message = $"Student with ID {studentId} and name {firstName} {lastName} has been deleted.";
-                return Ok(new { Message = message });
+                await studentService.DeleteStudentAsync(id, deleteAddress);
+                return Ok();
             }
             catch (IdNotFoundException ex)
             {

@@ -18,28 +18,20 @@ namespace Project_GradeBook_Web.Controllers
             this.markService = markService;
         }
 
-        /// <summary>
-        /// Adds a new mark for a student and returns details about the added mark.
-        /// </summary>
-        /// <param name="studentId">The ID of the student.</param>
-        /// <param name="markDto">The details of the mark to add.</param>
         [HttpPost("{studentId}/marks")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddMark(int studentId, CreateMarkDto markDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
-                var result = await markService.AddMarkAsync(studentId, markDto);
-
-                if (result.StartsWith("Mark added successfully"))
-                {
-                    return Ok(result); 
-                }
-                else
-                {
-                    return BadRequest(result); 
-                }
+                await markService.AddMarkAsync(studentId, markDto);
+                return NoContent();
             }
             catch (InvalidOperationException ex)
             {
@@ -60,9 +52,9 @@ namespace Project_GradeBook_Web.Controllers
             {
                 var marks = await markService.GetStudentMarksAsync(studentId);
 
-                if (!marks.Any())
+                if (marks == null || !marks.Any())
                 {
-                    return NotFound($"No marks found for student with ID {studentId}.");
+                    return Ok(new List<MarkDto>());
                 }
 
                 return Ok(marks);
@@ -80,17 +72,17 @@ namespace Project_GradeBook_Web.Controllers
         /// <param name="subjectId">The ID of the subject.</param>
         /// <returns>A list of marks for the student in the specified subject.</returns>
         [HttpGet("{studentId}/marks/subject/{subjectId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<MarkDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetStudentMarksBySubject(int studentId, int subjectId)
         {
             try
             {
                 var marks = await markService.GetStudentMarksBySubjectAsync(studentId, subjectId);
 
-                if (!marks.Any())
+                if (marks == null || !marks.Any())
                 {
-
-                    return Ok($"No marks found for student with ID {studentId} in subject with ID {subjectId}.");
+                    return Ok(new List<MarkDto>());
                 }
 
                 return Ok(marks);
