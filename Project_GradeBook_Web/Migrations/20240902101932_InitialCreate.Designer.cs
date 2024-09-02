@@ -12,7 +12,7 @@ using Project_GradeBook_Web.DbContext;
 namespace Project_GradeBook_Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240808094936_InitialCreate")]
+    [Migration("20240902101932_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
